@@ -47,6 +47,8 @@ jobs:
           else
             git worktree remove /tmp/gh-pages 2>/dev/null || true
             mkdir -p /tmp/gh-pages
+            # Sync files into the empty destination first (avoid deleting .git later)
+            rsync -a --delete "$TMP_SITE/" /tmp/gh-pages/
             pushd /tmp/gh-pages
             git init
             git checkout --orphan gh-pages
@@ -58,8 +60,10 @@ jobs:
           fi
           DEST=/tmp/gh-pages
 
-          # Sync files into the worktree
-          rsync -a --delete "$TMP_SITE/" "$DEST/"
+          # If we used a worktree (origin existed), sync into it; otherwise it's already synced
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            rsync -a --delete "$TMP_SITE/" "$DEST/"
+          fi
 
           # Commit & push from worktree
           pushd "$DEST"
