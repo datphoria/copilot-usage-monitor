@@ -5,6 +5,12 @@ on:
     - cron: '0 6 * * *' # daily at 06:00 UTC
   workflow_dispatch: {}
 
+# Required permissions for publishing pages and creating issues
+permissions:
+  contents: write
+  pages: write
+  issues: write
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
