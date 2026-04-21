@@ -27,22 +27,21 @@ jobs:
         run: |
           node src/fetcher.js
 
-      - name: Prepare site artifact
+      - name: Prepare site folder
         run: |
-          TMP_SITE=$(mktemp -d)
-          cp -r web/* "$TMP_SITE/" || true
-          cp usage.json "$TMP_SITE/" || true
-          echo "Prepared site at $TMP_SITE"
-          ls -la "$TMP_SITE"
+          SITE_DIR=site
+          rm -rf "$SITE_DIR"
+          mkdir -p "$SITE_DIR"
+          cp -r web/* "$SITE_DIR/" || true
+          cp usage.json "$SITE_DIR/" || true
+          ls -la "$SITE_DIR"
         shell: bash
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v2
+      - name: Publish to gh-pages via actions-gh-pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          path: ${{ runner.temp }}
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
 
 
       - name: Alert if usage over threshold
