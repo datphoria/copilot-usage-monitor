@@ -1,0 +1,12 @@
+{
+  "fetched_at": "2026-04-21T12:26:19.066Z",
+  "result": {
+    "login": "datphoria",
+    "usage": {
+      "url": "https://api.github.com/users/datphoria/copilot/usage",
+      "ok": false,
+      "status": 404,
+      "text": "{\r\n  \"message\": \"Not Found\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"404\"\r\n}"
+    }
+  }
+}

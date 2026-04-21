@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Copilot Usage Monitor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:12px}
+    .card{border:1px solid #ddd;padding:16px;border-radius:8px;margin-bottom:12px}
+    pre{background:#f7f7f7;padding:12px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <h1>Copilot Usage Monitor</h1>
+  <div id="status" class="card">Loading...</div>
+  <div class="card">
+    <h3>Raw data</h3>
+    <pre id="raw">no data</pre>
+  </div>
+
+  <script>
+    async function load(){
+      try{
+        const res = await fetch('/usage.json');
+        if(!res.ok){
+          document.getElementById('status').innerText = 'No usage.json found (Action may not have run yet)';
+          return;
+        }
+        const j = await res.json();
+        const meta = j.fetched_at ? 'Last fetched: ' + j.fetched_at : '';
+        const statusEl = document.getElementById('status');
+        statusEl.innerHTML = '<h3>'+meta+'</h3>';
+        statusEl.innerHTML += '<p>Source URL: ' + (j.result && j.result.usage && j.result.usage.url ? j.result.usage.url : 'unknown') + '</p>';
+        statusEl.innerHTML += '<p>Response OK: ' + (j.result && j.result.usage && j.result.usage.ok ? 'Yes' : 'No') + '</p>';
+        document.getElementById('raw').innerText = JSON.stringify(j, null, 2);
+      }catch(e){
+        document.getElementById('status').innerText = 'Error: '+e;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
