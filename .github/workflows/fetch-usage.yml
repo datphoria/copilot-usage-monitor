@@ -18,7 +18,7 @@ jobs:
           node-version: '18'
 
       - name: Install deps
-        run: npm ci
+        run: npm install
         working-directory: ./
 
       - name: Run fetcher
@@ -41,4 +41,36 @@ jobs:
           git commit -m "Update usage and site" || echo "no changes"
           git branch -M gh-pages
           git push -f origin gh-pages
+        shell: bash
+
+      - name: Alert if usage over threshold
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          THRESHOLD: 80
+        run: |
+          # Extract percent_used from usage.json using node; expects usage.result.usage.data.percent_used
+          PERCENT=$(node -e "const fs=require('fs');try{const j=JSON.parse(fs.readFileSync('usage.json'));const p=(j.result&&j.result.usage&&j.result.usage.data&&j.result.usage.data.percent_used); if(p==null) process.exit(0); console.log(p);}catch(e){process.exit(0);}"
+          ) || true
+          echo "percent: $PERCENT"
+          if [ -z "$PERCENT" ]; then
+            echo "No percent_used found in usage.json — skipping alert step"
+            exit 0
+          fi
+          # compare numerically
+          if [ $(echo "$PERCENT >= $THRESHOLD" | bc -l) -ne 0 ]; then
+            echo "Threshold exceeded: $PERCENT >= $THRESHOLD"
+            # look for existing open issue created by this workflow (label: usage-monitor)
+            EXISTING=$(gh issue list --label "usage-monitor" --state open --repo $GITHUB_REPOSITORY --json number --jq '.[0].number' 2>/dev/null || echo '')
+            TITLE="Copilot usage alert: ${PERCENT}% used"
+            BODY="Automated alert: Copilot usage is at ${PERCENT}% of configured cap. See usage.json in the Pages site for details."
+            if [ -z "$EXISTING" ]; then
+              echo "Creating issue"
+              gh issue create --repo $GITHUB_REPOSITORY --title "$TITLE" --body "$BODY" --label "usage-monitor" || true
+            else
+              echo "Commenting on existing issue #$EXISTING"
+              gh issue comment $EXISTING --repo $GITHUB_REPOSITORY --body "Usage still at ${PERCENT}% (threshold ${THRESHOLD}%)." || true
+            fi
+          else
+            echo "Under threshold: $PERCENT < $THRESHOLD"
+          fi
         shell: bash
