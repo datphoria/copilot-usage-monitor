@@ -50,6 +50,10 @@ jobs:
             pushd /tmp/gh-pages
             git init
             git checkout --orphan gh-pages
+            # ensure remote is set so push works
+            git remote add origin https://github.com/${GITHUB_REPOSITORY}.git
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             popd
           fi
           DEST=/tmp/gh-pages
@@ -61,7 +65,8 @@ jobs:
           pushd "$DEST"
           git add --all
           git commit -m "Update usage and site" || echo "no changes"
-          git push -f origin gh-pages
+          # If origin/gh-pages doesn't exist, push to create it
+          git push -f origin gh-pages || git push -u origin gh-pages
           popd
 
           # Cleanup
