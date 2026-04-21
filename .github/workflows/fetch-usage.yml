@@ -39,17 +39,20 @@ jobs:
 
           # Use a separate worktree for gh-pages to avoid touching the current workspace
           git fetch origin gh-pages || true
-          if git rev-parse --verify gh-pages >/dev/null 2>&1; then
-            git worktree add /tmp/gh-pages gh-pages
-            DEST=/tmp/gh-pages
+          # Prepare or reuse gh-pages worktree. If remote gh-pages exists, check it out; otherwise create orphan branch.
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            # If worktree already exists, remove it first
+            git worktree remove /tmp/gh-pages 2>/dev/null || true
+            git worktree add -B gh-pages /tmp/gh-pages origin/gh-pages
           else
-            # create an orphan branch locally
-            git worktree add /tmp/gh-pages
+            git worktree remove /tmp/gh-pages 2>/dev/null || true
+            mkdir -p /tmp/gh-pages
             pushd /tmp/gh-pages
+            git init
             git checkout --orphan gh-pages
             popd
-            DEST=/tmp/gh-pages
           fi
+          DEST=/tmp/gh-pages
 
           # Sync files into the worktree
           rsync -a --delete "$TMP_SITE/" "$DEST/"
@@ -63,7 +66,7 @@ jobs:
 
           # Cleanup
           rm -rf "$TMP_SITE"
-          git worktree remove /tmp/gh-pages || true
+          git worktree remove /tmp/gh-pages 2>/dev/null || true
         shell: bash
 
       - name: Alert if usage over threshold
