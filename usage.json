@@ -1,12 +1,64 @@
 {
-  "fetched_at": "2026-04-21T12:29:02.647Z",
+  "fetched_at": "2026-04-21T12:30:33.231Z",
   "result": {
     "login": "datphoria",
     "usage": {
-      "url": "https://api.github.com/users/datphoria/copilot/usage",
-      "ok": false,
-      "status": 404,
-      "text": "{\r\n  \"message\": \"Not Found\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"404\"\r\n}"
+      "url": "https://api.github.com/users/datphoria/subscriptions",
+      "ok": true,
+      "status": 200,
+      "data": [],
+      "attempts": [
+        {
+          "url": "https://api.github.com/users/datphoria/copilot/usage",
+          "status": 404,
+          "body": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        {
+          "url": "https://api.github.com/users/datphoria/settings/billing",
+          "status": 404,
+          "body": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        {
+          "url": "https://api.github.com/users/datphoria/copilot",
+          "status": 404,
+          "body": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        {
+          "url": "https://api.github.com/users/datphoria/settings/billing/copilot",
+          "status": 404,
+          "body": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        {
+          "url": "https://api.github.com/users/datphoria/billing/copilot",
+          "status": 404,
+          "body": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest",
+            "status": "404"
+          }
+        },
+        {
+          "url": "https://api.github.com/users/datphoria/subscriptions",
+          "status": 200,
+          "body": []
+        }
+      ]
     }
   }
 }
