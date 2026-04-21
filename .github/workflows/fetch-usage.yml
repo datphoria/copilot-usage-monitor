@@ -27,59 +27,23 @@ jobs:
         run: |
           node src/fetcher.js
 
-      - name: Commit usage.json to gh-pages (safe)
+      - name: Prepare site artifact
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Prepare a temporary site folder outside the repo working tree
           TMP_SITE=$(mktemp -d)
           cp -r web/* "$TMP_SITE/" || true
           cp usage.json "$TMP_SITE/" || true
-
-          # Use a separate worktree for gh-pages to avoid touching the current workspace
-          git fetch origin gh-pages || true
-          # Prepare or reuse gh-pages worktree. If remote gh-pages exists, check it out; otherwise create orphan branch.
-          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
-            # If worktree already exists, remove it first
-            git worktree remove /tmp/gh-pages 2>/dev/null || true
-            git worktree add -B gh-pages /tmp/gh-pages origin/gh-pages
-          else
-            git worktree remove /tmp/gh-pages 2>/dev/null || true
-            mkdir -p /tmp/gh-pages
-            # Sync files into the empty destination first (avoid deleting .git later)
-            rsync -a --delete "$TMP_SITE/" /tmp/gh-pages/
-            pushd /tmp/gh-pages
-            git init
-            git checkout --orphan gh-pages
-            # ensure remote is set so push works
-            git remote add origin https://github.com/${GITHUB_REPOSITORY}.git
-            # Use GITHUB_TOKEN for authentication when pushing
-            git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            popd
-          fi
-          DEST=/tmp/gh-pages
-
-          # If origin gh-pages existed we already added the worktree above — ensure it contains the site
-          # (when origin existed we ran git worktree add -B gh-pages /tmp/gh-pages origin/gh-pages and need to rsync now)
-          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
-            rsync -a --delete "$TMP_SITE/" "$DEST/"
-          fi
-
-          # Commit & push from worktree
-          pushd "$DEST"
-          git add --all
-          git commit -m "Update usage and site" || echo "no changes"
-          # If origin/gh-pages doesn't exist, push to create it
-          git push -f origin gh-pages || git push -u origin gh-pages
-          popd
-
-          # Cleanup
-          rm -rf "$TMP_SITE"
-          git worktree remove /tmp/gh-pages 2>/dev/null || true
+          echo "Prepared site at $TMP_SITE"
+          ls -la "$TMP_SITE"
         shell: bash
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ${{ runner.temp }}
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
+
 
       - name: Alert if usage over threshold
         env:
