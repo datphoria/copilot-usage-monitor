@@ -56,7 +56,13 @@ jobs:
           THRESHOLD: 80
         run: |
           # Extract percent_used from usage.json using node; expects usage.result.usage.data.percent_used
-          PERCENT=$(node -e "const fs=require('fs');try{const j=JSON.parse(fs.readFileSync('usage.json'));const p=(j.result&&j.result.usage&&j.result.usage.data&&j.result.usage.data.percent_used); if(p==null) process.exit(0); console.log(p);}catch(e){process.exit(0);}"
+          PERCENT=$(node -e "const fs=require('fs');try{const j=JSON.parse(fs.readFileSync('usage.json'));
+            const p1 = j.result && j.result.usage && j.result.usage.data && j.result.usage.data.percent_used;
+            const p2 = j.result && j.result.usage && j.result.usage.computed && j.result.usage.computed.percent_used;
+            const p = (p1!=null)?p1:((p2!=null)?p2:null);
+            if(p==null) process.exit(0);
+            console.log(p);
+          }catch(e){process.exit(0);}"
           ) || true
           echo "percent: $PERCENT"
           if [ -z "$PERCENT" ]; then
