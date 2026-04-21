@@ -27,20 +27,43 @@ jobs:
         run: |
           node src/fetcher.js
 
-      - name: Commit usage.json to gh-pages
+      - name: Commit usage.json to gh-pages (safe)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan gh-pages || git checkout gh-pages
-          git rm -rf . || true
-          # copy web site and usage.json into branch
-          mkdir -p tmp_site
-          cp -r web/* tmp_site/
-          cp usage.json tmp_site/
-          git add tmp_site/*
+
+          # Prepare a temporary site folder outside the repo working tree
+          TMP_SITE=$(mktemp -d)
+          cp -r web/* "$TMP_SITE/" || true
+          cp usage.json "$TMP_SITE/" || true
+
+          # Use a separate worktree for gh-pages to avoid touching the current workspace
+          git fetch origin gh-pages || true
+          if git rev-parse --verify gh-pages >/dev/null 2>&1; then
+            git worktree add /tmp/gh-pages gh-pages
+            DEST=/tmp/gh-pages
+          else
+            # create an orphan branch locally
+            git worktree add /tmp/gh-pages
+            pushd /tmp/gh-pages
+            git checkout --orphan gh-pages
+            popd
+            DEST=/tmp/gh-pages
+          fi
+
+          # Sync files into the worktree
+          rsync -a --delete "$TMP_SITE/" "$DEST/"
+
+          # Commit & push from worktree
+          pushd "$DEST"
+          git add --all
           git commit -m "Update usage and site" || echo "no changes"
-          git branch -M gh-pages
           git push -f origin gh-pages
+          popd
+
+          # Cleanup
+          rm -rf "$TMP_SITE"
+          git worktree remove /tmp/gh-pages || true
         shell: bash
 
       - name: Alert if usage over threshold
