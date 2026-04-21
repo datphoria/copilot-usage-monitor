@@ -36,16 +36,37 @@ async function getCopilotUsage(){
   for(const url of candidateUrls){
     try{
       const res = await fetch(url, { headers });
+      const txt = await res.text();
+      let j = null;
+      try{ j = JSON.parse(txt); }catch(e){ /* not JSON */ }
       if(res.ok){
-        const j = await res.json();
-        usage = { url, ok: true, data: j };
+        usage = { url, ok: true, status: res.status, data: j || txt };
         break;
       } else {
-        const txt = await res.text();
         usage = usage || { url, ok: false, status: res.status, text: txt };
       }
     } catch(e){
       usage = usage || { url, ok: false, error: String(e) };
+    }
+  }
+
+  // Try to compute percent_used if the data includes cap/used fields in known shapes
+  if(usage && usage.ok && usage.data){
+    const d = usage.data;
+    // common possible shapes: { cap: number, used: number } or { cap: { amount: n }, used: { amount: n } } or { total: { included: n, consumed: n } }
+    let cap = null, used = null;
+    if(typeof d.cap === 'number') cap = d.cap;
+    if(typeof d.used === 'number') used = d.used;
+    if(d.cap && typeof d.cap.amount === 'number') cap = d.cap.amount;
+    if(d.used && typeof d.used.amount === 'number') used = d.used.amount;
+    if(d.total && typeof d.total.included === 'number') cap = d.total.included;
+    if(d.total && typeof d.total.consumed === 'number') used = d.total.consumed;
+
+    if(cap != null && used != null && cap > 0){
+      usage.computed = usage.computed || {};
+      usage.computed.percent_used = Math.round((used / cap) * 10000) / 100; // two decimals
+      usage.computed.cap = cap;
+      usage.computed.used = used;
     }
   }
 
