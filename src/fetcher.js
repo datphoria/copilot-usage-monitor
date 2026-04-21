@@ -30,15 +30,24 @@ async function getCopilotUsage(){
     `${GITHUB_API}/users/${login}/copilot/usage`,
     `${GITHUB_API}/users/${login}/settings/billing`,
     `${GITHUB_API}/users/${login}/copilot`,
+    // alternative shapes and guesses
+    `${GITHUB_API}/users/${login}/settings/billing/copilot`,
+    `${GITHUB_API}/users/${login}/billing/copilot`,
+    `${GITHUB_API}/users/${login}/subscriptions`,
   ];
 
   let usage = null;
+  const attempts = [];
   for(const url of candidateUrls){
     try{
       const res = await fetch(url, { headers });
       const txt = await res.text();
       let j = null;
       try{ j = JSON.parse(txt); }catch(e){ /* not JSON */ }
+      const attempt = { url, status: res.status };
+      if(j) attempt.body = j; else attempt.text = txt;
+      attempts.push(attempt);
+
       if(res.ok){
         usage = { url, ok: true, status: res.status, data: j || txt };
         break;
@@ -46,9 +55,13 @@ async function getCopilotUsage(){
         usage = usage || { url, ok: false, status: res.status, text: txt };
       }
     } catch(e){
+      attempts.push({ url, error: String(e) });
       usage = usage || { url, ok: false, error: String(e) };
     }
   }
+
+  // Attach attempts for debugging
+  if(usage) usage.attempts = attempts;
 
   // Try to compute percent_used if the data includes cap/used fields in known shapes
   if(usage && usage.ok && usage.data){
