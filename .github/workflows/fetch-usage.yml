@@ -60,8 +60,9 @@ jobs:
           fi
           DEST=/tmp/gh-pages
 
-          # If we used a worktree (origin existed), sync into it; otherwise it's already synced
-          if git rev-parse --git-dir >/dev/null 2>&1; then
+          # If origin gh-pages existed we already added the worktree above — ensure it contains the site
+          # (when origin existed we ran git worktree add -B gh-pages /tmp/gh-pages origin/gh-pages and need to rsync now)
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
             rsync -a --delete "$TMP_SITE/" "$DEST/"
           fi
 
