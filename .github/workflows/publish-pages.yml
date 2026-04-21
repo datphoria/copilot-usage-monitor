@@ -1,0 +1,13 @@
+name: Publish Pages (noop)
+
+# Pages will serve the gh-pages branch pushed by the fetch step.
+# This workflow is provided for completeness; Pages settings may need enabling in the repo settings.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Pages will be served from gh-pages branch. Configure in repo settings."

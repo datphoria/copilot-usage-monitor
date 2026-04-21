@@ -1,0 +1,44 @@
+name: Fetch Copilot Usage
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # daily at 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install deps
+        run: npm ci
+        working-directory: ./
+
+      - name: Run fetcher
+        env:
+          USAGE_MONITOR_PAT: ${{ secrets.USAGE_MONITOR_PAT }}
+        run: |
+          node src/fetcher.js
+
+      - name: Commit usage.json to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages || git checkout gh-pages
+          git rm -rf . || true
+          # copy web site and usage.json into branch
+          mkdir -p tmp_site
+          cp -r web/* tmp_site/
+          cp usage.json tmp_site/
+          git add tmp_site/*
+          git commit -m "Update usage and site" || echo "no changes"
+          git branch -M gh-pages
+          git push -f origin gh-pages
+        shell: bash
